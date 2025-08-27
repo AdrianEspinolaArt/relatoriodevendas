@@ -6,7 +6,8 @@ import { MongooseService } from './mongoose.service';
 @Module({
   imports: [
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/dev', {
-      // opções de conexão podem ser ajustadas depois
+      tls: process.env.MONGO_TLS === 'true',
+      tlsCAFile: process.env.MONGO_TLS_CA,
     }),
   ],
   providers: [MongooseService],

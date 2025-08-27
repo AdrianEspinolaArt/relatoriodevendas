@@ -35,10 +35,10 @@ export class ConversionMetricsService {
     const totalUsers = await usersCol.countDocuments({});
 
     // Orders (Postgres)
-    const orders = await this.prisma.purchases.findMany({
+  const orders = await this.prisma.purchases.findMany({
       where: {
-        package_id: { not: { contains: 'trial', mode: 'insensitive' } },
-        payment_method: { not: { contains: 'trial', mode: 'insensitive' } },
+        package_id: { not: { contains: 'trial' } },
+        payment_method: { not: { contains: 'trial' } },
       },
       select: {
         id: true,
@@ -52,11 +52,11 @@ export class ConversionMetricsService {
     });
 
     // Payments (status PAID)
-    const payments = await this.prisma.purchases.findMany({
+  const payments = await this.prisma.purchases.findMany({
       where: {
         status: 'PAID',
-        package_id: { not: { contains: 'trial', mode: 'insensitive' } },
-        payment_method: { not: { contains: 'trial', mode: 'insensitive' } },
+        package_id: { not: { contains: 'trial' } },
+        payment_method: { not: { contains: 'trial' } },
       },
       select: {
         id: true,

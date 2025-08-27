@@ -13,10 +13,11 @@ import { ConversionMetricsService } from './conversion-metrics.service';
 import { CustomerAnalyticsController } from './customer-analytics.controller';
 import { CustomerAnalyticsService } from './customer-analytics.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { CustomMongooseModule } from './mongoose/mongoose.module';
 
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, CustomMongooseModule],
   controllers: [AppController, PlansController, PurchaseController, UsersController, ConversionMetricsController, CustomerAnalyticsController],
   providers: [AppService, PlansService, PurchaseService, UsersService, ConversionMetricsService, CustomerAnalyticsService],
 })

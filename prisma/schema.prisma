@@ -6,3 +6,1015 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model apple_notifications {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  data       Json?
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+}
+
+model day_streaks {
+  id         String   @id @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  created_by String   @db.Uuid
+}
+
+model disciplines {
+  id                               String                             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id                           Int?                               @unique
+  name                             String                             @db.VarChar(255)
+  created_at                       DateTime                           @default(now()) @db.Timestamp(6)
+  updated_at                       DateTime                           @default(now()) @db.Timestamp(6)
+  created_by                       String                             @db.Uuid
+  updated_by                       String                             @db.Uuid
+  deleted                          Boolean                            @default(false)
+  search_vector                    Unsupported("tsvector")?
+  origin                           DisciplineOriginEnum?
+  disciplines__lessons             disciplines__lessons[]
+  disciplines__modules             disciplines__modules[]
+  disciplines__tags                disciplines__tags[]
+  lesson_annotations               lesson_annotations[]
+  questions__disciplines           questions__disciplines[]
+  user_discipline_progress_metrics user_discipline_progress_metrics[]
+
+  @@index([id])
+}
+
+model disciplines__lessons {
+  lesson_id     String      @db.Uuid
+  discipline_id String      @db.Uuid
+  sequence      Int         @default(0)
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime    @default(now()) @db.Timestamp(6)
+  created_by    String      @db.Uuid
+  updated_by    String      @db.Uuid
+  deleted       Boolean     @default(false)
+  disciplines   disciplines @relation(fields: [discipline_id], references: [id])
+  lessons       lessons     @relation(fields: [lesson_id], references: [id])
+
+  @@id([lesson_id, discipline_id])
+  @@index([lesson_id, discipline_id])
+}
+
+model disciplines__modules {
+  discipline_id String      @db.Uuid
+  module_id     String      @db.Uuid
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  disciplines   disciplines @relation(fields: [discipline_id], references: [id])
+  modules       modules     @relation(fields: [module_id], references: [id])
+
+  @@index([discipline_id, module_id])
+}
+
+model disciplines__tags {
+  discipline_id String      @db.Uuid
+  tag_id        String      @db.Uuid
+  disciplines   disciplines @relation(fields: [discipline_id], references: [id])
+  tags          tags        @relation(fields: [tag_id], references: [id])
+
+  @@id([discipline_id, tag_id])
+}
+
+model exam_educations {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id     Int?     @unique
+  name       String   @db.VarChar(255)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  created_by String   @db.Uuid
+  updated_by String   @db.Uuid
+  deleted    Boolean  @default(false)
+  exams      exams[]
+}
+
+model exam_expertises {
+  id            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id        Int?                     @unique
+  name          String                   @db.VarChar(255)
+  created_at    DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                 @default(now()) @db.Timestamp(6)
+  created_by    String                   @db.Uuid
+  updated_by    String                   @db.Uuid
+  deleted       Boolean                  @default(false)
+  search_vector Unsupported("tsvector")?
+  exams         exams[]
+}
+
+model exams {
+  id                          String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id                      Int                           @unique
+  public_notice_id            String                        @db.Uuid
+  position_id                 String                        @db.Uuid
+  expertise_id                String                        @db.Uuid
+  education_id                String                        @db.Uuid
+  education_level             EDUCATION_LEVEL_ENUM
+  name                        String                        @db.VarChar(255)
+  exam_pdf_path               String?                       @db.VarChar(255)
+  answer_pdf_path             String?                       @db.VarChar(255)
+  created_at                  DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at                  DateTime                      @default(now()) @db.Timestamp(6)
+  created_by                  String                        @db.Uuid
+  updated_by                  String                        @db.Uuid
+  deleted                     Boolean                       @default(false)
+  userPracticeTestsId         String?                       @db.Uuid
+  search_vector               Unsupported("tsvector")?
+  exam_educations             exam_educations               @relation(fields: [education_id], references: [id])
+  exam_expertises             exam_expertises               @relation(fields: [expertise_id], references: [id])
+  positions                   positions                     @relation(fields: [position_id], references: [id])
+  public_notices              public_notices                @relation(fields: [public_notice_id], references: [id])
+  user_practice_tests         user_practice_tests?          @relation(fields: [userPracticeTestsId], references: [id])
+  exams__questions            exams__questions[]
+  user_exams_favorite         user_exams_favorite[]
+  user_practice_tests_anwsers user_practice_tests_anwsers[]
+  user_practice_tests_metrics user_practice_tests_metrics[]
+
+  @@index([id, public_notice_id])
+}
+
+model exams__questions {
+  exam_id     String    @db.Uuid
+  question_id String    @db.Uuid
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @default(now()) @db.Timestamp(6)
+  created_by  String    @db.Uuid
+  updated_by  String    @db.Uuid
+  deleted     Boolean   @default(false)
+  exams       exams     @relation(fields: [exam_id], references: [id])
+  questions   questions @relation(fields: [question_id], references: [id])
+
+  @@id([exam_id, question_id])
+  @@index([exam_id])
+  @@index([question_id])
+}
+
+model institutions {
+  id                   String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id               Int?                     @unique
+  questoes_old_id      Int?                     @unique
+  name                 String                   @db.VarChar(255)
+  acronym              String?                  @db.VarChar(255)
+  image_path           String?                  @db.VarChar(127)
+  site                 String?                  @db.VarChar(255)
+  created_at           DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at           DateTime                 @default(now()) @db.Timestamp(6)
+  created_by           String                   @db.Uuid
+  updated_by           String                   @db.Uuid
+  deleted              Boolean                  @default(false)
+  status               ROW_STATUS               @default(DISABLED)
+  search_vector        Unsupported("tsvector")?
+  institutions__boards institutions__boards[]
+  packages             packages[]
+  public_notices       public_notices[]
+}
+
+model institutions__boards {
+  institution_id       String               @db.Uuid
+  board_id             String               @db.Uuid
+  public_notice_boards public_notice_boards @relation(fields: [board_id], references: [id])
+  institutions         institutions         @relation(fields: [institution_id], references: [id])
+
+  @@id([institution_id, board_id])
+}
+
+model lesson__questions {
+  lesson_id   String    @db.Uuid
+  question_id String    @db.Uuid
+  lessons     lessons   @relation(fields: [lesson_id], references: [id])
+  questions   questions @relation(fields: [question_id], references: [id])
+
+  @@id([lesson_id, question_id])
+  @@index([lesson_id, question_id])
+}
+
+model lesson_annotations {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id       String
+  lesson_id     String      @db.Uuid
+  title         String
+  content       String
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime
+  created_by    String      @db.Uuid
+  updated_by    String?     @db.Uuid
+  discipline_id String      @db.Uuid
+  module_id     String      @db.Uuid
+  package_id    String      @db.Uuid
+  disciplines   disciplines @relation(fields: [discipline_id], references: [id])
+  lessons       lessons     @relation(fields: [lesson_id], references: [id])
+  modules       modules     @relation(fields: [module_id], references: [id])
+  packages      packages    @relation(fields: [package_id], references: [id])
+}
+
+model lesson_reactions {
+  lesson_id       String   @db.Uuid
+  user_id         String
+  reaction        String
+  feedback_option String?  @db.VarChar(255)
+  feedback_text   String?  @db.VarChar(511)
+  created_at      DateTime @default(now())
+  lessons         lessons  @relation(fields: [lesson_id], references: [id])
+
+  @@id([lesson_id, user_id])
+}
+
+model lesson_reports {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  lesson_id  String   @db.Uuid
+  reason     String   @db.VarChar(511)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  created_by String   @db.Uuid
+  updated_by String   @db.Uuid
+  deleted    Boolean  @default(false)
+  lessons    lessons  @relation(fields: [lesson_id], references: [id])
+}
+
+model lessons {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id               Int?                   @unique
+  produtora_id         Int?
+  name                 String                 @db.VarChar(511)
+  video_path           String?                @db.VarChar(255)
+  pdf_path             String?                @db.VarChar(255)
+  created_at           DateTime               @default(now()) @db.Timestamp(6)
+  updated_at           DateTime               @default(now()) @db.Timestamp(6)
+  created_by           String                 @db.Uuid
+  updated_by           String                 @db.Uuid
+  deleted              Boolean                @default(false)
+  pdf_cdn_url          String?                @db.VarChar(511)
+  video_cdn_url        String?                @db.VarChar(511)
+  dislike              Int                    @default(0)
+  like                 Int                    @default(0)
+  disciplines__lessons disciplines__lessons[]
+  lesson__questions    lesson__questions[]
+  lesson_annotations   lesson_annotations[]
+  lesson_reactions     lesson_reactions[]
+  lesson_reports       lesson_reports[]
+  lessons__tags        lessons__tags[]
+  user_lesson_history  user_lesson_history[]
+
+  @@index([id])
+}
+
+model lessons__tags {
+  lesson_id String  @db.Uuid
+  tag_id    String  @db.Uuid
+  lessons   lessons @relation(fields: [lesson_id], references: [id])
+  tags      tags    @relation(fields: [tag_id], references: [id])
+
+  @@id([lesson_id, tag_id])
+}
+
+model modules {
+  id                           String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                         String                         @db.VarChar(255)
+  description                  String                         @db.VarChar(511)
+  package_id                   String                         @db.Uuid
+  created_at                   DateTime                       @default(now()) @db.Timestamp(6)
+  updated_at                   DateTime                       @default(now()) @db.Timestamp(6)
+  created_by                   String
+  updated_by                   String?
+  deleted                      Boolean                        @default(false)
+  disciplines__modules         disciplines__modules[]
+  lesson_annotations           lesson_annotations[]
+  packages                     packages                       @relation(fields: [package_id], references: [id])
+  user_module_progress_metrics user_module_progress_metrics[]
+
+  @@index([id, package_id])
+}
+
+model packages {
+  id                            String                          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                          String                          @db.VarChar(255)
+  description                   String                          @db.VarChar(511)
+  price                         Decimal                         @db.Decimal(10, 2)
+  public_notice_id              String?                         @db.Uuid
+  plan_id                       String?                         @db.Uuid
+  created_at                    DateTime                        @default(now()) @db.Timestamp(6)
+  updated_at                    DateTime                        @default(now()) @db.Timestamp(6)
+  created_by                    String
+  updated_by                    String?
+  deleted                       Boolean                         @default(false)
+  institution_id                String                          @db.Uuid
+  lesson_annotations            lesson_annotations[]
+  modules                       modules[]
+  institutions                  institutions                    @relation(fields: [institution_id], references: [id])
+  plans                         plans?                          @relation(fields: [plan_id], references: [id])
+  public_notices                public_notices?                 @relation(fields: [public_notice_id], references: [id])
+  plans_packages                plans_packages[]
+  purchases                     purchases[]
+  user_package_progress_metrics user_package_progress_metrics[]
+
+  @@index([id])
+}
+
+model plans {
+  id                   String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                 String           @db.VarChar(255)
+  description          String           @db.VarChar(511)
+  duration_days        Int
+  price                Decimal          @default(0.00) @db.Decimal(10, 2)
+  created_at           DateTime         @default(now()) @db.Timestamp(6)
+  updated_at           DateTime         @default(now()) @db.Timestamp(6)
+  created_by           String
+  updated_by           String?
+  deleted              Boolean          @default(false)
+  sap_id               Int
+  external_provider_id String?
+  installment_price    Decimal          @db.Decimal(10, 2)
+  installments         Int
+  recommended          Boolean
+  discount_percentage  Int              @default(0)
+  promotional_price    Decimal          @default(0.00) @db.Decimal(10, 2)
+  erp_service_id       Int?
+  packages             packages[]
+  plans_packages       plans_packages[]
+  purchases            purchases[]
+}
+
+model plans_packages {
+  plan_id    String   @db.Uuid
+  package_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  packages   packages @relation(fields: [package_id], references: [id])
+  plans      plans    @relation(fields: [plan_id], references: [id])
+
+  @@id([plan_id, package_id])
+}
+
+model positions {
+  id            String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id        Int?                     @unique
+  name          String                   @db.VarChar(255)
+  slug          String                   @db.VarChar(255)
+  created_at    DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at    DateTime                 @default(now()) @db.Timestamp(6)
+  created_by    String                   @db.Uuid
+  updated_by    String                   @db.Uuid
+  deleted       Boolean                  @default(false)
+  search_vector Unsupported("tsvector")?
+  exams         exams[]
+}
+
+model previous_user_tendencies_widget_data {
+  user_id         String   @id @db.Uuid
+  widget_data     Json?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @db.Timestamp(6)
+  new_widget_data Json?
+}
+
+model public_notice_boards {
+  id                   String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id               Int                      @unique
+  name                 String                   @db.VarChar(255)
+  abbreviation         String                   @db.VarChar(63)
+  created_at           DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at           DateTime                 @default(now()) @db.Timestamp(6)
+  created_by           String                   @db.Uuid
+  updated_by           String                   @db.Uuid
+  deleted              Boolean                  @default(false)
+  search_vector        Unsupported("tsvector")?
+  institutions__boards institutions__boards[]
+  public_notices       public_notices[]
+}
+
+model public_notices {
+  id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id                 Int?                     @unique
+  institution_id         String                   @db.Uuid
+  public_notice_board_id String                   @db.Uuid
+  name                   String                   @db.VarChar(255)
+  notice                 String?                  @db.VarChar(255)
+  contest_notice         String?                  @db.VarChar(255)
+  year                   Int
+  created_at             DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(6)
+  created_by             String                   @db.Uuid
+  updated_by             String                   @db.Uuid
+  deleted                Boolean                  @default(false)
+  search_vector          Unsupported("tsvector")?
+  exams                  exams[]
+  packages               packages[]
+  institutions           institutions             @relation(fields: [institution_id], references: [id])
+  public_notice_boards   public_notice_boards     @relation(fields: [public_notice_board_id], references: [id])
+
+  @@index([id, year])
+}
+
+model purchases {
+  id                     String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String               @db.Uuid
+  billing_id             String?
+  expires_at             DateTime?
+  package_id             String?              @db.Uuid
+  paid_price             Decimal              @db.Decimal(10, 2)
+  payment_method         PAYMENT_METHOD_ENUM
+  plan_id                String?              @db.Uuid
+  type                   PURCHASE_TYPE
+  created_at             DateTime             @default(now()) @db.Timestamp(6)
+  updated_at             DateTime             @db.Timestamp(6)
+  status                 STATUS_PURCHASE_ENUM
+  payment_due_date       DateTime?
+  billingInfo            Json?
+  cc_flag                CreditCardFlagEnum?
+  cc_last_four_digits    String?              @db.VarChar(4)
+  cc_operator            String?              @db.VarChar(50)
+  apple_transaction_id   String?              @db.VarChar(255)
+  invoiced               InvoiceStatusEnum    @default(NOT_INVOICED)
+  installments           Int?
+  client_data            Json?
+  id_partner_erp_service String?              @db.VarChar(255)
+  id_client_sap          String?              @db.VarChar(255)
+  id_pedido_erp          String?              @db.VarChar(255)
+  packages               packages?            @relation(fields: [package_id], references: [id])
+  plans                  plans?               @relation(fields: [plan_id], references: [id])
+  refunds                refunds[]
+}
+
+model question_alternative_images {
+  id                    String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  alternative_id        String                @db.Uuid
+  path                  String                @db.VarChar(255)
+  sequence              Int
+  question_alternatives question_alternatives @relation(fields: [alternative_id], references: [id])
+
+  @@index([id, alternative_id])
+}
+
+model question_alternatives {
+  id                          String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id                      Int?                          @unique
+  question_id                 String                        @db.Uuid
+  is_correct                  Boolean                       @default(false)
+  text                        String                        @db.VarChar(65535)
+  sequence                    Int
+  question_alternative_images question_alternative_images[]
+  questions                   questions                     @relation(fields: [question_id], references: [id])
+  user_practice_tests_anwsers user_practice_tests_anwsers[]
+
+  @@index([id, question_id])
+}
+
+model question_annotations {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String
+  question_id String    @db.Uuid
+  title       String
+  content     String
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime
+  created_by  String    @db.Uuid
+  updated_by  String?   @db.Uuid
+  questions   questions @relation(fields: [question_id], references: [id])
+}
+
+model question_comment_reactions {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  comment_id        String            @db.Uuid
+  user_id           String            @db.Uuid
+  reaction          ReactionType?
+  created_at        DateTime          @default(now()) @db.Timestamp(6)
+  updated_at        DateTime          @default(now()) @db.Timestamp(6)
+  question_comments question_comments @relation(fields: [comment_id], references: [id])
+
+  @@unique([comment_id, user_id])
+}
+
+model question_comments {
+  id                         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  text                       String                       @db.VarChar(511)
+  question_id                String                       @db.Uuid
+  author                     String                       @db.VarChar(255)
+  like                       Int                          @default(0)
+  dislike                    Int                          @default(0)
+  reports                    Int                          @default(0)
+  reply_to                   String?                      @db.Uuid
+  created_at                 DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at                 DateTime                     @default(now()) @db.Timestamp(6)
+  created_by                 String                       @db.Uuid
+  updated_by                 String?                      @db.Uuid
+  deleted                    Boolean                      @default(false)
+  question_comment_reactions question_comment_reactions[]
+  questions                  questions                    @relation(fields: [question_id], references: [id])
+  question_comments          question_comments?           @relation("question_commentsToquestion_comments", fields: [reply_to], references: [id])
+  other_question_comments    question_comments[]          @relation("question_commentsToquestion_comments")
+  question_comments_reports  question_comments_reports[]
+
+  @@index([id, question_id])
+}
+
+model question_comments_reports {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id           String            @db.Uuid
+  comment_id        String            @db.Uuid
+  reason            String
+  created_at        DateTime          @default(now()) @db.Timestamp(6)
+  updated_at        DateTime          @default(now()) @db.Timestamp(6)
+  created_by        String?
+  updated_by        String?
+  deleted           Boolean           @default(false)
+  question_comments question_comments @relation(fields: [comment_id], references: [id])
+}
+
+model question_group_images {
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_group_id String          @db.Uuid
+  path              String          @db.VarChar(255)
+  sequence          Int
+  question_groups   question_groups @relation(fields: [question_group_id], references: [id])
+}
+
+model question_groups {
+  id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String                  @db.VarChar(255)
+  common_text           String                  @db.VarChar(65535)
+  question_group_images question_group_images[]
+  questions             questions[]
+}
+
+model question_images {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_id String    @db.Uuid
+  path        String    @db.VarChar(255)
+  sequence    Int
+  questions   questions @relation(fields: [question_id], references: [id])
+
+  @@index([id, question_id])
+}
+
+model question_reports {
+  id          String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String                       @db.Uuid
+  question_id String                       @db.Uuid
+  reason      QUESTION_REPORT_REASONS_ENUM
+  status      QUESTION_REPORT_STATUS_ENUM
+  created_at  DateTime                     @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                     @default(now()) @db.Timestamp(6)
+  created_by  String                       @db.Uuid
+  updated_by  String                       @db.Uuid
+  deleted     Boolean                      @default(false)
+  questions   questions                    @relation(fields: [question_id], references: [id])
+
+  @@unique([user_id, question_id])
+}
+
+model questions {
+  id                                 String                               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  old_id                             Int?                                 @unique
+  question_group_id                  String?                              @db.Uuid
+  statement                          String                               @db.VarChar(65535)
+  video_path                         String?                              @db.VarChar(255)
+  needs_review                       Boolean                              @default(false)
+  ai_generated                       Boolean                              @default(false)
+  response_explanation               String?                              @db.VarChar(65535)
+  created_at                         DateTime                             @default(now()) @db.Timestamp(6)
+  updated_at                         DateTime                             @default(now()) @db.Timestamp(6)
+  created_by                         String                               @db.Uuid
+  updated_by                         String?                              @db.Uuid
+  deleted                            Boolean                              @default(false)
+  video_cdn_url                      String?                              @db.VarChar(511)
+  exams__questions                   exams__questions[]
+  lesson__questions                  lesson__questions[]
+  question_alternatives              question_alternatives[]
+  question_annotations               question_annotations[]
+  question_comments                  question_comments[]
+  question_images                    question_images[]
+  question_reports                   question_reports[]
+  question_groups                    question_groups?                     @relation(fields: [question_group_id], references: [id])
+  questions__disciplines             questions__disciplines[]
+  questions__tags                    questions__tags[]
+  user_practice_tests__questions     user_practice_tests__questions[]
+  user_practice_tests_anwsers        user_practice_tests_anwsers[]
+  user_questions_performance_history user_questions_performance_history[]
+
+  @@index([ai_generated])
+  @@index([deleted])
+  @@index([id])
+}
+
+model questions__disciplines {
+  question_id   String      @db.Uuid
+  discipline_id String      @db.Uuid
+  disciplines   disciplines @relation(fields: [discipline_id], references: [id])
+  questions     questions   @relation(fields: [question_id], references: [id])
+
+  @@id([question_id, discipline_id])
+  @@index([question_id, discipline_id])
+}
+
+model questions__tags {
+  tag_id      String    @db.Uuid
+  question_id String    @db.Uuid
+  questions   questions @relation(fields: [question_id], references: [id])
+  tags        tags      @relation(fields: [tag_id], references: [id])
+
+  @@id([tag_id, question_id])
+}
+
+model refunds {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String           @db.Uuid
+  purchase_id String           @db.Uuid
+  value       Decimal          @db.Decimal(10, 2)
+  status      RefundStatusEnum @default(PENDING)
+  reason      String           @db.VarChar(511)
+  created_at  DateTime         @default(now()) @db.Timestamp(6)
+  updated_at  DateTime         @db.Timestamp(6)
+  created_by  String           @db.Uuid
+  updated_by  String?          @db.Uuid
+  purchases   purchases        @relation(fields: [purchase_id], references: [id])
+}
+
+model sap_data {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  purchase_id String   @db.Uuid
+  data        Json?
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+}
+
+model tags {
+  id                String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String                   @db.VarChar(255)
+  slug              String                   @unique @db.VarChar(255)
+  created_at        DateTime                 @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                 @default(now()) @db.Timestamp(6)
+  created_by        String
+  updated_by        String
+  deleted           Boolean                  @default(false)
+  search_vector     Unsupported("tsvector")?
+  disciplines__tags disciplines__tags[]
+  lessons__tags     lessons__tags[]
+  questions__tags   questions__tags[]
+}
+
+model trending_filters {
+  filter_id    String      @unique
+  filter_table FiltersEnum
+  filter_name  String
+}
+
+model user_daily_streaks_progress {
+  id         String   @id @db.Uuid
+  day_streak Int
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @db.Timestamp(6)
+  created_by String   @unique @db.Uuid
+}
+
+model user_discipline_progress_metrics {
+  user_id             String
+  discipline_id       String      @db.Uuid
+  total_lessons       Int
+  completed_lessons   Int         @default(1)
+  progress_percentage Int         @default(0)
+  created_at          DateTime    @default(now()) @db.Timestamp(6)
+  updated_at          DateTime    @db.Timestamp(6)
+  disciplines         disciplines @relation(fields: [discipline_id], references: [id])
+
+  @@id([user_id, discipline_id])
+  @@index([user_id, discipline_id], map: "user_discipline_progress_metrics_user_id_discipline_id")
+}
+
+model user_exams_favorite {
+  user_id          String   @db.Uuid
+  exam_id          String   @db.Uuid
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  name             String?
+  cron             Int?
+  number_questions Int?
+  exams            exams    @relation(fields: [exam_id], references: [id])
+
+  @@id([user_id, exam_id])
+}
+
+model user_favorite_practice_tests {
+  user_id             String              @db.Uuid
+  practice_test_id    String              @db.Uuid
+  created_at          DateTime            @default(now()) @db.Timestamp(6)
+  name                String?
+  cron                Int?
+  number_questions    Int?
+  user_practice_tests user_practice_tests @relation(fields: [practice_test_id], references: [id])
+
+  @@id([user_id, practice_test_id])
+}
+
+model user_lesson_history {
+  user_id          String
+  lesson_id        String           @db.Uuid
+  status           UserProgressEnum @default(IN_PROGRESS)
+  created_at       DateTime         @default(now()) @db.Timestamp(6)
+  updated_at       DateTime         @db.Timestamp(6)
+  video_percentage Int?             @default(0)
+  lessons          lessons          @relation(fields: [lesson_id], references: [id])
+
+  @@id([user_id, lesson_id])
+  @@index([user_id, lesson_id], map: "user_lesson_history_user_id_lesson_id")
+}
+
+model user_module_progress_metrics {
+  user_id               String
+  module_id             String   @db.Uuid
+  total_lessons         Int
+  completed_lessons     Int      @default(1)
+  progress_percentage   Int      @default(0)
+  created_at            DateTime @default(now()) @db.Timestamp(6)
+  updated_at            DateTime @db.Timestamp(6)
+  completed_disciplines Int      @default(0)
+  total_disciplines     Int
+  modules               modules  @relation(fields: [module_id], references: [id])
+
+  @@id([user_id, module_id])
+  @@index([user_id, module_id], map: "user_module_progress_metrics_user_id_module_id")
+}
+
+model user_package_progress_metrics {
+  user_id                        String
+  package_id                     String   @db.Uuid
+  total_disciplines              Int
+  completed_disciplines          Int      @default(0)
+  discipline_progress_percentage Int      @default(0)
+  total_lessons                  Int
+  completed_lessons              Int      @default(1)
+  created_at                     DateTime @default(now()) @db.Timestamp(6)
+  updated_at                     DateTime @db.Timestamp(6)
+  packages                       packages @relation(fields: [package_id], references: [id])
+
+  @@id([user_id, package_id])
+  @@index([user_id, package_id], map: "user_package_progress_metrics_user_id_package_id")
+}
+
+model user_practice_tests {
+  id                             String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                           String                           @db.VarChar(255)
+  time_seconds                   Int?
+  recommended                    Boolean
+  level                          EDUCATION_LEVEL_ENUM
+  user_id                        String                           @db.Uuid
+  created_at                     DateTime                         @default(now()) @db.Timestamp(6)
+  updated_at                     DateTime                         @default(now()) @db.Timestamp(6)
+  created_by                     String
+  updated_by                     String
+  deleted                        Boolean                          @default(false)
+  exams                          exams[]
+  user_favorite_practice_tests   user_favorite_practice_tests[]
+  user_practice_tests__questions user_practice_tests__questions[]
+  user_practice_tests_anwsers    user_practice_tests_anwsers[]
+  user_practice_tests_metrics    user_practice_tests_metrics[]
+}
+
+model user_practice_tests__questions {
+  practice_test_id    String              @db.Uuid
+  question_id         String              @db.Uuid
+  user_practice_tests user_practice_tests @relation(fields: [practice_test_id], references: [id])
+  questions           questions           @relation(fields: [question_id], references: [id])
+
+  @@id([practice_test_id, question_id])
+}
+
+model user_practice_tests_anwsers {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                 String                    @db.Uuid
+  user_practice_test_id   String?                   @db.Uuid
+  exam_id                 String?                   @db.Uuid
+  question_id             String                    @db.Uuid
+  question_alternative_id String?                   @db.Uuid
+  aswered                 PRACTICE_TEST_ANSWER_ENUM
+  answered_at             DateTime                  @default(now()) @db.Timestamp(6)
+  elapsed_time            Int?
+  exams                   exams?                    @relation(fields: [exam_id], references: [id])
+  question_alternatives   question_alternatives?    @relation(fields: [question_alternative_id], references: [id])
+  questions               questions                 @relation(fields: [question_id], references: [id])
+  user_practice_tests     user_practice_tests?      @relation(fields: [user_practice_test_id], references: [id])
+}
+
+model user_practice_tests_metrics {
+  id                    String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String               @db.Uuid
+  exam_id               String?              @db.Uuid
+  user_practice_test_id String?              @db.Uuid
+  time_seconds          Int?
+  time_spent_seconds    Int?
+  num_incorrect_answers Int
+  num_correct_answers   Int
+  num_not_answers       Int
+  answered_at           DateTime             @db.Timestamp(6)
+  created_at            DateTime             @default(now()) @db.Timestamp(6)
+  percentage_score      Int
+  trophy_icon           TROPHY_ICON
+  exams                 exams?               @relation(fields: [exam_id], references: [id])
+  user_practice_tests   user_practice_tests? @relation(fields: [user_practice_test_id], references: [id])
+}
+
+model user_questions_performance_history {
+  user_id     String                  @db.Uuid
+  question_id String                  @db.Uuid
+  answer      UserQuestionAnswerEnum?
+  created_at  DateTime                @default(now()) @db.Timestamp(6)
+  updated_at  DateTime                @db.Timestamp(6)
+  id          String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questions   questions               @relation(fields: [question_id], references: [id])
+
+  @@index([user_id])
+}
+
+model user_questions_performance_metrics {
+  id                       String   @id @db.Uuid
+  user_id                  String   @unique @db.Uuid
+  total_questions_answered Int      @default(0)
+  total_correct_answers    Int      @default(0)
+  total_incorrect_answers  Int      @default(0)
+  overwall_performance     Int      @default(0)
+  created_at               DateTime @default(now()) @db.Timestamp(6)
+  updated_at               DateTime @db.Timestamp(6)
+
+  @@index([id, user_id])
+}
+
+model user_study_plans {
+  id                     String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                String             @db.Uuid
+  name                   String             @db.VarChar(100)
+  start                  DateTime           @db.Timestamp(6)
+  end                    DateTime           @db.Timestamp(6)
+  description            String?            @db.VarChar(511)
+  type                   StudyPlanTypeEnum
+  repeatable             Boolean            @default(false)
+  weekdays_repeatable    Int[]              @default([])
+  main_study_plan_id     String?            @db.Uuid
+  created_at             DateTime           @default(now()) @db.Timestamp(6)
+  updated_at             DateTime           @default(now()) @db.Timestamp(6)
+  weeks_repeatable       Int?
+  user_study_plans       user_study_plans?  @relation("user_study_plansTouser_study_plans", fields: [main_study_plan_id], references: [id])
+  other_user_study_plans user_study_plans[] @relation("user_study_plansTouser_study_plans")
+}
+
+enum ADDRESS_TYPE_ENUM {
+  RESIDENCIAL
+  COMERCIAL
+  OUTRO
+}
+
+enum CreditCardFlagEnum {
+  VISA
+  MASTERCARD
+  AMEX
+  ELO
+  HIPERCARD
+  DINERS
+  DISCOVER
+  AURA
+  CABAL
+  MAESTRO
+  CREDSYSTEM
+  SOROCRED
+  JCB
+  BANESCARD
+  MASTER
+}
+
+enum DisciplineOriginEnum {
+  CONCURSOS
+  QUESTOES
+}
+
+enum EDUCATION_LEVEL_ENUM {
+  FUNDAMENTAL
+  MEDIO
+  SUPERIOR_INCOMPLETO
+  SUPERIOR_COMPLETO
+  ESPECIALIZACAO
+  MESTRADO
+  DOUTORADO
+  INDEFINIDO
+}
+
+enum FiltersEnum {
+  disciplines
+  public_notices
+  public_notice_boards
+  exams
+  expertises
+  positions
+  tag
+  institutions
+  year
+  education_level
+}
+
+enum InvoiceStatusEnum {
+  PENDING
+  INVOICED
+  NOT_INVOICED
+}
+
+enum LESSON_REPORT_ENUM {
+  PENDENTE
+  SOLUCIONADO
+}
+
+enum PAYMENT_METHOD_ENUM {
+  CREDIT_CARD
+  SUBSCRIPTION
+  BILLET
+  PIX
+  GIFT
+  IN_APP
+}
+
+enum PRACTICE_TEST_ANSWER_ENUM {
+  CORRECT
+  INCORRECT
+  EMPTY
+}
+
+enum PURCHASE_TYPE {
+  PLAN
+  PACKAGE
+  TRIAL
+}
+
+enum QUESTION_DIFFICULT_ENUM {
+  MUITO_FACIL
+  FACIL
+  MEDIO
+  DIFICIL
+  MUITO_DIFICIL
+}
+
+enum QUESTION_REPORT_REASONS_ENUM {
+  ENUNCIADO_OU_ALTERNATIVA
+  GABARITO
+  ASSUNTO
+  DISCIPLINA
+  ANULADA
+  DESATUALIZADA
+  DUPLICADA
+}
+
+enum QUESTION_REPORT_STATUS_ENUM {
+  PENDENTE
+  CORRIGIDO
+  DESATIVADO
+}
+
+enum ROW_STATUS {
+  ENABLED
+  DISABLED
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+enum RefundStatusEnum {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum STATUS_PURCHASE_ENUM {
+  EXPIRED
+  PENDING
+  PAID
+  REFUSED
+  CANCELED
+  REFUNDED
+}
+
+enum StudyPlanTypeEnum {
+  THEORY
+  PRACTICE_TEST
+  REVIEW
+  QUESTION
+}
+
+enum TIPO_PLANO_ENUM {
+  COMPLETO
+  MODULO
+  MODULO_CURSO
+  MODULO_PROVA
+}
+
+enum TROPHY_ICON {
+  BRONZE
+  SILVER
+  GOLD
+}
+
+enum UserProgressEnum {
+  NOT_INITIALIZED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum UserQuestionAnswerEnum {
+  CORRECT
+  INCORRECT
+}

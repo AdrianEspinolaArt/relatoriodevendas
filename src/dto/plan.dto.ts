@@ -1,7 +1,7 @@
 export class PlanDto {
   id: number;
   name: string;
-  description: string;
+  description: string | null;
   created_at?: Date;
   updated_at?: Date;
   expires_at?: Date;

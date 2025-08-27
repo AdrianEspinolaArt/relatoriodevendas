@@ -21,6 +21,11 @@ export class PlansService {
       },
       take: limit,
     };
-    return this.prisma.plans.findMany(limit ? query : { select: query.select });
+  const plans = await this.prisma.plans.findMany(limit ? query : { select: query.select });
+  return plans.map(plan => ({
+    ...plan,
+    expires_at: plan.expires_at ?? undefined,
+    payment_due_date: plan.payment_due_date ?? undefined,
+  }));
   }
 }

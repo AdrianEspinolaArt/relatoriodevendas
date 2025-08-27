@@ -17,19 +17,19 @@ export class PurchaseService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(limit = 100, offset = 0): Promise<PurchaseDto[]> {
-    const purchases = await this.prisma.purchases.findMany({
+  const purchases = await this.prisma.purchases.findMany({
       orderBy: { created_at: 'desc' },
       take: limit,
       skip: offset,
     });
 
     // Buscar planos relacionados
-    const planIds = Array.from(new Set(purchases.map(p => p.plan_id).filter(Boolean)));
-    let plansMap = {};
-    if (planIds.length) {
-      const plans = await this.prisma.plans.findMany({ where: { id: { in: planIds } } });
-      plansMap = Object.fromEntries(plans.map(pl => [pl.id, pl]));
-    }
+  const planIds = Array.from(new Set(purchases.map(p => p.plan_id).filter((id): id is number => typeof id === 'number')));
+  let plansMap = {};
+  if (planIds.length) {
+    const plans = await this.prisma.plans.findMany({ where: { id: { in: planIds } } });
+    plansMap = Object.fromEntries(plans.map(pl => [pl.id, pl]));
+  }
 
     // Mapear cada purchase para o JSON de saída
     return purchases.map(p => {
