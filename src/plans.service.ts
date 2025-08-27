@@ -7,25 +7,31 @@ export class PlansService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(limit?: number): Promise<PlanDto[]> {
+    // O modelo correto é 'plans', e os campos conforme o schema
     const query = {
       select: {
         id: true,
         name: true,
         description: true,
+        duration_days: true,
+        price: true,
         created_at: true,
         updated_at: true,
-        expires_at: true,
-        payment_due_date: true,
-        billingInfo: true,
-        client_data: true,
+        created_by: true,
+        updated_by: true,
+        deleted: true,
+        sap_id: true,
+        external_provider_id: true,
+        installment_price: true,
+        installments: true,
+        recommended: true,
+        discount_percentage: true,
+        promotional_price: true,
+        erp_service_id: true,
       },
       take: limit,
     };
-  const plans = await this.prisma.plans.findMany(limit ? query : { select: query.select });
-  return plans.map(plan => ({
-    ...plan,
-    expires_at: plan.expires_at ?? undefined,
-    payment_due_date: plan.payment_due_date ?? undefined,
-  }));
+    const plans = await this.prisma.plans.findMany(limit ? query : { select: query.select });
+    return plans;
   }
 }

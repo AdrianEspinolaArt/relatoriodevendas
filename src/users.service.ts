@@ -19,15 +19,24 @@ export class UsersService {
       usersCol.countDocuments({}),
     ]);
 
-    // Mapeia para o DTO, convertendo _id para string
+    // Mapeia para o DTO, convertendo _id para string e incluindo todos os campos esperados
     const users: UserDto[] = rawUsers.map((u: any) => ({
       _id: u._id?.toString(),
-      name: u.name,
       email: u.email,
-      cpf: u.cpf,
-      telefone: u.telefone,
+      password: u.password,
+      salt: u.salt,
+      full_name: u.full_name,
+      cellphone: u.cellphone,
+      roles: u.roles,
+      addresses: u.addresses,
+      isEmailVerified: u.isEmailVerified,
+      tenant: u.tenant,
+      system: u.system,
       createdAt: u.createdAt,
-      // Adicione outros campos conforme necessário
+      updatedAt: u.updatedAt,
+      __v: u.__v,
+      anonymizedDeleted: u.anonymizedDeleted,
+      migrated_to_modern_auth: u.migrated_to_modern_auth,
     }));
 
     const now = new Date();
@@ -48,7 +57,7 @@ export class UsersService {
       todayCount,
       last7daysCount,
       last30daysCount,
-      users: users as UserDto[],
+      users: users,
     };
   }
 }

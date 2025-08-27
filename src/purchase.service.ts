@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
 import { PurchaseDto } from './dto/purchase.dto';
+import { PAYMENT_METHOD_ENUM } from '@prisma/client';
+
 
 function parseClientData(raw: any) {
   try {
@@ -17,21 +19,20 @@ export class PurchaseService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(limit = 100, offset = 0): Promise<PurchaseDto[]> {
-  const purchases = await this.prisma.purchases.findMany({
+    const purchases = await this.prisma.purchases.findMany({
       orderBy: { created_at: 'desc' },
       take: limit,
       skip: offset,
     });
 
     // Buscar planos relacionados
-  const planIds = Array.from(new Set(purchases.map(p => p.plan_id).filter((id): id is number => typeof id === 'number')));
-  let plansMap = {};
-  if (planIds.length) {
-    const plans = await this.prisma.plans.findMany({ where: { id: { in: planIds } } });
-    plansMap = Object.fromEntries(plans.map(pl => [pl.id, pl]));
-  }
-
-    // Mapear cada purchase para o JSON de saída
+    const planIds = Array.from(new Set(purchases.map(p => p.plan_id).filter((id): id is string => typeof id === 'string')));
+    let plansMap = {};
+    if (planIds.length) {
+      const plans = await this.prisma.plans.findMany({ where: { id: { in: planIds } } });
+      plansMap = Object.fromEntries(plans.map(pl => [pl.id, pl]));
+    }
+ // Mapear cada purchase para o JSON de saída
     return purchases.map(p => {
       const client = parseClientData(p.client_data);
       const planoNome = p.plan_id && plansMap[p.plan_id] ? plansMap[p.plan_id].name : null;
@@ -44,11 +45,11 @@ export class PurchaseService {
         telefone: client?.telefone1 || client?.telefone || null,
         produto: p.package_id || null,
         plan: planoNome,
-        valororiginal: p.paid_price ?? null,
+        valororiginal: p.paid_price ? Number(p.paid_price) : null,
         formapagto: p.payment_method || null,
         datacadastro: p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : null,
         statuspedido: p.status || null,
-        recorrente: p.type === 'recurring' || false,
+        recorrente: p.payment_method === PAYMENT_METHOD_ENUM.SUBSCRIPTION,
       };
     });
   }

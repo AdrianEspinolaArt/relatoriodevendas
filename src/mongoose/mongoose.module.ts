@@ -1,14 +1,15 @@
 import { Global, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MongooseService } from './mongoose.service';
+import { buildMongoOptions } from './mongo-options';
 
 @Global()
 @Module({
   imports: [
-    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/dev', {
-      tls: process.env.MONGO_TLS === 'true',
-      tlsCAFile: process.env.MONGO_TLS_CA,
-    }),
+    MongooseModule.forRoot(
+      process.env.MONGO_URI || 'mongodb://localhost:27017/dev',
+      { ...buildMongoOptions(), dbName: 'auth' }
+    ),
   ],
   providers: [MongooseService],
   exports: [MongooseService],

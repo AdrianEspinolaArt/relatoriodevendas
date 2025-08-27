@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { MongooseService } from './mongoose/mongoose.service';
 import { PrismaService } from './prisma/prisma.service';
 import { CustomerAnalyticsDto } from './dto/customer-analytics.dto';
+import { PAYMENT_METHOD_ENUM } from '@prisma/client';
+
 
 @Injectable()
 export class CustomerAnalyticsService {
@@ -36,8 +38,8 @@ export class CustomerAnalyticsService {
     const paidSales = await this.prisma.purchases.findMany({
       where: {
         status: 'PAID',
-        package_id: { not: { contains: 'trial' } },
-        payment_method: { not: { contains: 'trial' } },
+        package_id: { not: 'trial' },
+        payment_method: { not: PAYMENT_METHOD_ENUM.GIFT },
       },
       select: {
         id: true,

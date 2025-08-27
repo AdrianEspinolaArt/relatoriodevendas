@@ -1,5 +1,6 @@
 
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PlansController } from './plans.controller';
@@ -17,7 +18,11 @@ import { CustomMongooseModule } from './mongoose/mongoose.module';
 
 
 @Module({
-  imports: [PrismaModule, CustomMongooseModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    CustomMongooseModule
+  ],
   controllers: [AppController, PlansController, PurchaseController, UsersController, ConversionMetricsController, CustomerAnalyticsController],
   providers: [AppService, PlansService, PurchaseService, UsersService, ConversionMetricsService, CustomerAnalyticsService],
 })

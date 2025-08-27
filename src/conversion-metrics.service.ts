@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MongooseService } from './mongoose/mongoose.service';
 import { PrismaService } from './prisma/prisma.service';
 import { ConversionMetricsDto } from './dto/conversion-metrics.dto';
+import { PAYMENT_METHOD_ENUM } from '@prisma/client';
 
 function parseClientData(raw: any) {
   try {
@@ -29,16 +30,20 @@ export class ConversionMetricsService {
   ) {}
 
   async getMetrics(): Promise<ConversionMetricsDto> {
-    const db = this.mongooseService.getConnection().db;
-    if (!db) throw new Error('Database connection is not available.');
-    const usersCol = db.collection('users');
-    const totalUsers = await usersCol.countDocuments({});
+    try {
+      console.log('[ConversionMetrics] Iniciando busca de métricas...');
+      
+      const db = this.mongooseService.getConnection().db;
+      if (!db) throw new Error('Database connection is not available.');
+      const usersCol = db.collection('users');
+      const totalUsers = await usersCol.countDocuments({});
+      console.log('[ConversionMetrics] Total de usuários:', totalUsers);
 
-    // Orders (Postgres)
-  const orders = await this.prisma.purchases.findMany({
+      // Orders (Postgres)
+      console.log('[ConversionMetrics] Buscando pedidos...');
+      const orders = await this.prisma.purchases.findMany({
       where: {
-        package_id: { not: { contains: 'trial' } },
-        payment_method: { not: { contains: 'trial' } },
+        payment_method: { not: PAYMENT_METHOD_ENUM.GIFT },
       },
       select: {
         id: true,
@@ -52,11 +57,10 @@ export class ConversionMetricsService {
     });
 
     // Payments (status PAID)
-  const payments = await this.prisma.purchases.findMany({
+    const payments = await this.prisma.purchases.findMany({
       where: {
         status: 'PAID',
-        package_id: { not: { contains: 'trial' } },
-        payment_method: { not: { contains: 'trial' } },
+        payment_method: { not: PAYMENT_METHOD_ENUM.GIFT },
       },
       select: {
         id: true,
@@ -96,5 +100,9 @@ export class ConversionMetricsService {
         },
       },
     };
+  } catch (error) {
+    console.error('[ConversionMetrics] Erro ao buscar métricas:', error);
+    throw error;
   }
+}
 }

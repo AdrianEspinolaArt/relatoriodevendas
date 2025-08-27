@@ -1,6 +1,6 @@
 export class PurchaseDto {
-  id: number;
-  pedidoid: number | string;
+  id: string;
+  pedidoid: string | null;
   nome: string | null;
   email: string | null;
   cpf: string | null;
